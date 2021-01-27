@@ -1,42 +1,44 @@
-var contextMenuItem = {
+var menuItem = {
     "id": "spendMoney",
     "title": "Spend Money",
-    "contexts": [
-        "selection"
-    ]
+    "contexts": ["selection"]
 };
-chrome.contextMenus.create(contextMenuItem);
 
 function isInt(value) {
-    return !NaN(value) && parseInt(Number(value)) == value && !isNaN(parseInt(value, 10));
+  return !isNaN(value) && 
+         parseInt(Number(value)) == value && 
+         !isNaN(parseInt(value, 10));
 }
 
-chrome.contextMenus.onClicked.addListener(function (clickedData) {
-    if ((clickedData.menuItemId == "spendMoney") && (clickedData.selectionText)) {
-        if (isInt(clickedData.selectionText)) {
-            chrome.storage.sync.get(['total', 'limit'], function (budget) {
+chrome.contextMenus.create(menuItem);
+
+chrome.contextMenus.onClicked.addListener(function(clickData){   
+    if (clickData.menuItemId == "spendMoney" && clickData.selectionText){    
+        if (isInt(clickData.selectionText)){          
+            chrome.storage.sync.get(['total','limit'], function(budget){
                 var newTotal = 0;
-                if (budget.total) {
+                if (budget.total){
                     newTotal += parseInt(budget.total);
                 }
-                newTotal += parseInt(clickedData.selectionText);
-                chrome.storage.sync.set({ 'total': newTotal }, function () {
-                    if (newTotal >= budget.limit) {
-                        var notifOptions = {
-                            type: 'basic',
-                            iconUrl:'icon48.png',
-                            title: 'Limit Reached!',
-                            message: "Uh oh!Looks like you have reached your limits!"
-                        };
-                        chrome.notifications.create('limitNotif', notifOptions);
+
+                newTotal += parseInt(clickData.selectionText);
+                chrome.storage.sync.set({'total': newTotal}, function(){               
+                if (newTotal >= budget.limit){
+                    var notifOptions = {
+                        type: "basic",
+                        iconUrl: "icon48.png",
+                        title: "Limit reached!",
+                        message: "Uh oh, look's like you've reached your alloted limit."
+                    };
+                    chrome.notifications.create('limitNotif', notifOptions);
+
                     }
                 });
-
             });
         }
     }
 });
 
-chrome.storage.onChange.addListener(function (changes, storageName) {
-    chrome.browserAction.setBagdeText({ "text": changes.total.newValue.toString() });
-})
+chrome.storage.onChanged.addListener(function(changes, storageName){
+    chrome.browserAction.setBadgeText({"text": changes.total.newValue.toString()});
+});
